@@ -264,7 +264,9 @@
       // Fetch both sides of the daf
       const sides = ['a', 'b'];
       let combinedText = '';
-      let combinedCommentary = '';
+      let combinedSteinsaltz = '';
+      let combinedRashi = '';
+      let combinedTosafot = '';
       
       for (const side of sides) {
         // Fetch main text
@@ -296,14 +298,42 @@
           // Get the Hebrew text directly from the response
           const hebrewText = data.he || [];
           if (hebrewText.length > 0) {
-            combinedCommentary += `--- ${daf}${side} ---\n` + hebrewText.join('\n') + '\n\n';
+            combinedSteinsaltz += `--- ${daf}${side} ---\n` + hebrewText.join('\n') + '\n\n';
             showDebug(`Found Steinsaltz commentary for ${tractate}.${daf}${side}`);
           } else {
             showDebug(`No Steinsaltz commentary found for ${tractate}.${daf}${side}`);
           }
         } catch (e) {
           console.error('Error fetching commentary:', e);
-          combinedCommentary += `--- ${daf}${side} ---\nError fetching commentary: ${e.message}\n\n`;
+          combinedSteinsaltz += `--- ${daf}${side} ---\nError fetching commentary: ${e.message}\n\n`;
+        }
+
+        // Fetch Rashi
+        const rashiUrl = `https://www.sefaria.org/api/texts/Rashi on ${tractate}.${daf}${side}?lang=he&context=0`;
+        try {
+          const resp = await fetch(rashiUrl);
+          if (!resp.ok) throw new Error('Network response was not ok');
+          const data = await resp.json();
+          const hebrewText = data.he || [];
+          if (hebrewText.length > 0) {
+            combinedRashi += `--- ${daf}${side} ---\n` + hebrewText.join('\n') + '\n\n';
+          }
+        } catch (e) {
+          combinedRashi += `--- ${daf}${side} ---\nError fetching Rashi: ${e.message}\n\n`;
+        }
+
+        // Fetch Tosafot
+        const tosafotUrl = `https://www.sefaria.org/api/texts/Tosafot on ${tractate}.${daf}${side}?lang=he&context=0`;
+        try {
+          const resp = await fetch(tosafotUrl);
+          if (!resp.ok) throw new Error('Network response was not ok');
+          const data = await resp.json();
+          const hebrewText = data.he || [];
+          if (hebrewText.length > 0) {
+            combinedTosafot += `--- ${daf}${side} ---\n` + hebrewText.join('\n') + '\n\n';
+          }
+        } catch (e) {
+          combinedTosafot += `--- ${daf}${side} ---\nError fetching Tosafot: ${e.message}\n\n`;
         }
       }
 
@@ -327,10 +357,12 @@
         URL.revokeObjectURL(a.href);
       }, 100);
 
-      // Download commentary file if it exists
-      if (combinedCommentary.trim()) {
+      // Download commentary files if they exist
+      let downloaded = [filename];
+
+      if (combinedSteinsaltz.trim()) {
         const commentaryFilename = `${tractate}_${daf}_steinsaltz.txt`;
-        const commentaryBlob = new Blob([combinedCommentary], { type: 'text/plain;charset=utf-8' });
+        const commentaryBlob = new Blob([combinedSteinsaltz], { type: 'text/plain;charset=utf-8' });
         const b = document.createElement('a');
         b.href = URL.createObjectURL(commentaryBlob);
         b.download = commentaryFilename;
@@ -340,10 +372,41 @@
           document.body.removeChild(b);
           URL.revokeObjectURL(b.href);
         }, 100);
-        messageDiv.textContent = `Downloaded ${filename} and ${commentaryFilename}`;
-      } else {
-        messageDiv.textContent = `Downloaded ${filename} (No Steinsaltz commentary available)`;
+        downloaded.push(commentaryFilename);
       }
+
+      if (combinedRashi.trim()) {
+        const rashiFilename = `${tractate}_${daf}_rashi.txt`;
+        const rashiBlob = new Blob([combinedRashi], { type: 'text/plain;charset=utf-8' });
+        const c = document.createElement('a');
+        c.href = URL.createObjectURL(rashiBlob);
+        c.download = rashiFilename;
+        document.body.appendChild(c);
+        c.click();
+        setTimeout(() => {
+          document.body.removeChild(c);
+          URL.revokeObjectURL(c.href);
+        }, 100);
+        downloaded.push(rashiFilename);
+      }
+
+      if (combinedTosafot.trim()) {
+        const tosafotFilename = `${tractate}_${daf}_tosafot.txt`;
+        const tosafotBlob = new Blob([combinedTosafot], { type: 'text/plain;charset=utf-8' });
+        const d = document.createElement('a');
+        d.href = URL.createObjectURL(tosafotBlob);
+        d.download = tosafotFilename;
+        document.body.appendChild(d);
+        d.click();
+        setTimeout(() => {
+          document.body.removeChild(d);
+          URL.revokeObjectURL(d.href);
+        }, 100);
+        downloaded.push(tosafotFilename);
+      }
+
+      const list = downloaded.join(', ');
+      messageDiv.textContent = `Downloaded: ${list}`;
       messageDiv.className = 'message success';
 
       // Store for upload
