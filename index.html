@@ -83,6 +83,21 @@
       <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
         <input type="checkbox" id="includeTosafot" checked> Tosafot
       </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includeMeiri" checked> Meiri
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includePneiYehoshua" checked> Pnei Yehoshua
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includeRitva" checked> Ritva
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includeRashba" checked> Rashba
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includeShitaMekubetzet" checked> Shita Mekubetzet
+      </label>
     </div>
     <button id="download">Download Daf (Hebrew)</button>
     <button id="upload" style="display:none;">Upload to Google Drive</button>
@@ -156,6 +171,11 @@
     const includeSteinsaltzEl = document.getElementById('includeSteinsaltz');
     const includeRashiEl = document.getElementById('includeRashi');
     const includeTosafotEl = document.getElementById('includeTosafot');
+    const includeMeiriEl = document.getElementById('includeMeiri');
+    const includePneiYehoshuaEl = document.getElementById('includePneiYehoshua');
+    const includeRitvaEl = document.getElementById('includeRitva');
+    const includeRashbaEl = document.getElementById('includeRashba');
+    const includeShitaMekubetzetEl = document.getElementById('includeShitaMekubetzet');
 
     // Populate tractate dropdown
     TRACTATES.forEach(t => {
@@ -275,6 +295,11 @@
       const includeSteinsaltz = includeSteinsaltzEl.checked;
       const includeRashi = includeRashiEl.checked;
       const includeTosafot = includeTosafotEl.checked;
+      const includeMeiri = includeMeiriEl.checked;
+      const includePneiYehoshua = includePneiYehoshuaEl.checked;
+      const includeRitva = includeRitvaEl.checked;
+      const includeRashba = includeRashbaEl.checked;
+      const includeShitaMekubetzet = includeShitaMekubetzetEl.checked;
       if (!tractate || !daf) {
         messageDiv.textContent = 'Please select both tractate and daf.';
         return;
@@ -285,6 +310,11 @@
       let combinedSteinsaltz = '';
       let combinedRashi = '';
       let combinedTosafot = '';
+      let combinedMeiri = '';
+      let combinedPneiYehoshua = '';
+      let combinedRitva = '';
+      let combinedRashba = '';
+      let combinedShitaMekubetzet = '';
       
       for (const side of sides) {
         // Fetch main text
@@ -359,6 +389,86 @@
             combinedTosafot += `--- ${daf}${side} ---\nError fetching Tosafot: ${e.message}\n\n`;
           }
         }
+
+        // Fetch Meiri
+        if (includeMeiri) {
+          const meiriUrl = `https://www.sefaria.org/api/texts/Meiri on ${tractate}.${daf}${side}?lang=he&context=0`;
+          try {
+            const resp = await fetch(meiriUrl);
+            if (!resp.ok) throw new Error('Network response was not ok');
+            const data = await resp.json();
+            const hebrewText = data.he || [];
+            if (hebrewText.length > 0) {
+              combinedMeiri += `--- ${daf}${side} ---\n` + hebrewText.join('\n') + '\n\n';
+            }
+          } catch (e) {
+            combinedMeiri += `--- ${daf}${side} ---\nError fetching Meiri: ${e.message}\n\n`;
+          }
+        }
+
+        // Fetch Pnei Yehoshua
+        if (includePneiYehoshua) {
+          const pyUrl = `https://www.sefaria.org/api/texts/Pnei Yehoshua on ${tractate}.${daf}${side}?lang=he&context=0`;
+          try {
+            const resp = await fetch(pyUrl);
+            if (!resp.ok) throw new Error('Network response was not ok');
+            const data = await resp.json();
+            const hebrewText = data.he || [];
+            if (hebrewText.length > 0) {
+              combinedPneiYehoshua += `--- ${daf}${side} ---\n` + hebrewText.join('\n') + '\n\n';
+            }
+          } catch (e) {
+            combinedPneiYehoshua += `--- ${daf}${side} ---\nError fetching Pnei Yehoshua: ${e.message}\n\n`;
+          }
+        }
+
+        // Fetch Ritva
+        if (includeRitva) {
+          const ritvaUrl = `https://www.sefaria.org/api/texts/Ritva on ${tractate}.${daf}${side}?lang=he&context=0`;
+          try {
+            const resp = await fetch(ritvaUrl);
+            if (!resp.ok) throw new Error('Network response was not ok');
+            const data = await resp.json();
+            const hebrewText = data.he || [];
+            if (hebrewText.length > 0) {
+              combinedRitva += `--- ${daf}${side} ---\n` + hebrewText.join('\n') + '\n\n';
+            }
+          } catch (e) {
+            combinedRitva += `--- ${daf}${side} ---\nError fetching Ritva: ${e.message}\n\n`;
+          }
+        }
+
+        // Fetch Rashba
+        if (includeRashba) {
+          const rashbaUrl = `https://www.sefaria.org/api/texts/Rashba on ${tractate}.${daf}${side}?lang=he&context=0`;
+          try {
+            const resp = await fetch(rashbaUrl);
+            if (!resp.ok) throw new Error('Network response was not ok');
+            const data = await resp.json();
+            const hebrewText = data.he || [];
+            if (hebrewText.length > 0) {
+              combinedRashba += `--- ${daf}${side} ---\n` + hebrewText.join('\n') + '\n\n';
+            }
+          } catch (e) {
+            combinedRashba += `--- ${daf}${side} ---\nError fetching Rashba: ${e.message}\n\n`;
+          }
+        }
+
+        // Fetch Shita Mekubetzet
+        if (includeShitaMekubetzet) {
+          const shitaUrl = `https://www.sefaria.org/api/texts/Shita Mekubetzet on ${tractate}.${daf}${side}?lang=he&context=0`;
+          try {
+            const resp = await fetch(shitaUrl);
+            if (!resp.ok) throw new Error('Network response was not ok');
+            const data = await resp.json();
+            const hebrewText = data.he || [];
+            if (hebrewText.length > 0) {
+              combinedShitaMekubetzet += `--- ${daf}${side} ---\n` + hebrewText.join('\n') + '\n\n';
+            }
+          } catch (e) {
+            combinedShitaMekubetzet += `--- ${daf}${side} ---\nError fetching Shita Mekubetzet: ${e.message}\n\n`;
+          }
+        }
       }
 
       if (!combinedText.trim()) {
@@ -427,6 +537,81 @@
           URL.revokeObjectURL(d.href);
         }, 100);
         downloaded.push(tosafotFilename);
+      }
+
+      if (combinedMeiri.trim()) {
+        const meiriFilename = `${tractate}_${daf}_meiri.txt`;
+        const meiriBlob = new Blob([combinedMeiri], { type: 'text/plain;charset=utf-8' });
+        const e = document.createElement('a');
+        e.href = URL.createObjectURL(meiriBlob);
+        e.download = meiriFilename;
+        document.body.appendChild(e);
+        e.click();
+        setTimeout(() => {
+          document.body.removeChild(e);
+          URL.revokeObjectURL(e.href);
+        }, 100);
+        downloaded.push(meiriFilename);
+      }
+
+      if (combinedPneiYehoshua.trim()) {
+        const pyFilename = `${tractate}_${daf}_pnei_yehoshua.txt`;
+        const pyBlob = new Blob([combinedPneiYehoshua], { type: 'text/plain;charset=utf-8' });
+        const f = document.createElement('a');
+        f.href = URL.createObjectURL(pyBlob);
+        f.download = pyFilename;
+        document.body.appendChild(f);
+        f.click();
+        setTimeout(() => {
+          document.body.removeChild(f);
+          URL.revokeObjectURL(f.href);
+        }, 100);
+        downloaded.push(pyFilename);
+      }
+
+      if (combinedRitva.trim()) {
+        const ritvaFilename = `${tractate}_${daf}_ritva.txt`;
+        const ritvaBlob = new Blob([combinedRitva], { type: 'text/plain;charset=utf-8' });
+        const g = document.createElement('a');
+        g.href = URL.createObjectURL(ritvaBlob);
+        g.download = ritvaFilename;
+        document.body.appendChild(g);
+        g.click();
+        setTimeout(() => {
+          document.body.removeChild(g);
+          URL.revokeObjectURL(g.href);
+        }, 100);
+        downloaded.push(ritvaFilename);
+      }
+
+      if (combinedRashba.trim()) {
+        const rashbaFilename = `${tractate}_${daf}_rashba.txt`;
+        const rashbaBlob = new Blob([combinedRashba], { type: 'text/plain;charset=utf-8' });
+        const h = document.createElement('a');
+        h.href = URL.createObjectURL(rashbaBlob);
+        h.download = rashbaFilename;
+        document.body.appendChild(h);
+        h.click();
+        setTimeout(() => {
+          document.body.removeChild(h);
+          URL.revokeObjectURL(h.href);
+        }, 100);
+        downloaded.push(rashbaFilename);
+      }
+
+      if (combinedShitaMekubetzet.trim()) {
+        const shitaFilename = `${tractate}_${daf}_shita_mekubetzet.txt`;
+        const shitaBlob = new Blob([combinedShitaMekubetzet], { type: 'text/plain;charset=utf-8' });
+        const i = document.createElement('a');
+        i.href = URL.createObjectURL(shitaBlob);
+        i.download = shitaFilename;
+        document.body.appendChild(i);
+        i.click();
+        setTimeout(() => {
+          document.body.removeChild(i);
+          URL.revokeObjectURL(i.href);
+        }, 100);
+        downloaded.push(shitaFilename);
       }
 
       const list = downloaded.join(', ');
