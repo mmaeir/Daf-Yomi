@@ -279,14 +279,14 @@
 
       try {
         // הורד את הטקסט הראשי
-        const mainUrl = `https://www.sefaria.org/api/texts/${book}.${parshaApiName}?lang=he&commentary=0&context=0`;
+        const mainUrl = `https://www.sefaria.org/api/texts/${parshaApiName}?lang=he&commentary=0&context=0`;
         const mainResponse = await fetch(mainUrl);
 
         if (mainResponse.ok) {
           const mainData = await mainResponse.json();
           const hebrewText = mainData.he || [];
           if (Array.isArray(hebrewText)) {
-            mainText = hebrewText.flat().join('\n');
+            mainText = hebrewText.flat ? hebrewText.flat().join('\n') : hebrewText.join('\n');
           } else {
             mainText = hebrewText || '';
           }
@@ -297,13 +297,13 @@
         // הורד פירוש רש"י
         if (includeRashi) {
           try {
-            const rashiUrl = `https://www.sefaria.org/api/texts/Rashi on ${book}.${parshaApiName}?lang=he&context=0`;
+            const rashiUrl = `https://www.sefaria.org/api/texts/Rashi on ${parshaApiName}?lang=he&context=0`;
             const rashiResponse = await fetch(rashiUrl);
             if (rashiResponse.ok) {
               const rashiData = await rashiResponse.json();
               const hebrewCommentary = rashiData.he || [];
               if (Array.isArray(hebrewCommentary)) {
-                rashiText = hebrewCommentary.flat().join('\n');
+                rashiText = hebrewCommentary.flat ? hebrewCommentary.flat().join('\n') : hebrewCommentary.join('\n');
               } else {
                 rashiText = hebrewCommentary || '';
               }
@@ -316,13 +316,13 @@
         // הורד תרגום אונקלוס
         if (includeOnkelos) {
           try {
-            const onkelosUrl = `https://www.sefaria.org/api/texts/Onkelos on ${book}.${parshaApiName}?lang=he&context=0`;
+            const onkelosUrl = `https://www.sefaria.org/api/texts/Onkelos on ${parshaApiName}?lang=he&context=0`;
             const onkelosResponse = await fetch(onkelosUrl);
             if (onkelosResponse.ok) {
               const onkelosData = await onkelosResponse.json();
               const hebrewCommentary = onkelosData.he || [];
               if (Array.isArray(hebrewCommentary)) {
-                onkelosText = hebrewCommentary.flat().join('\n');
+                onkelosText = hebrewCommentary.flat ? hebrewCommentary.flat().join('\n') : hebrewCommentary.join('\n');
               } else {
                 onkelosText = hebrewCommentary || '';
               }
@@ -335,13 +335,13 @@
         // הורד פירוש רמב"ן
         if (includeRamban) {
           try {
-            const rambanUrl = `https://www.sefaria.org/api/texts/Ramban on ${book}.${parshaApiName}?lang=he&context=0`;
+            const rambanUrl = `https://www.sefaria.org/api/texts/Ramban on ${parshaApiName}?lang=he&context=0`;
             const rambanResponse = await fetch(rambanUrl);
             if (rambanResponse.ok) {
               const rambanData = await rambanResponse.json();
               const hebrewCommentary = rambanData.he || [];
               if (Array.isArray(hebrewCommentary)) {
-                rambanText = hebrewCommentary.flat().join('\n');
+                rambanText = hebrewCommentary.flat ? hebrewCommentary.flat().join('\n') : hebrewCommentary.join('\n');
               } else {
                 rambanText = hebrewCommentary || '';
               }
@@ -354,13 +354,13 @@
         // הורד פירוש אבן עזרא
         if (includeIbnEzra) {
           try {
-            const ibnEzraUrl = `https://www.sefaria.org/api/texts/Ibn Ezra on ${book}.${parshaApiName}?lang=he&context=0`;
+            const ibnEzraUrl = `https://www.sefaria.org/api/texts/Ibn Ezra on ${parshaApiName}?lang=he&context=0`;
             const ibnEzraResponse = await fetch(ibnEzraUrl);
             if (ibnEzraResponse.ok) {
               const ibnEzraData = await ibnEzraResponse.json();
               const hebrewCommentary = ibnEzraData.he || [];
               if (Array.isArray(hebrewCommentary)) {
-                ibnEzraText = hebrewCommentary.flat().join('\n');
+                ibnEzraText = hebrewCommentary.flat ? hebrewCommentary.flat().join('\n') : hebrewCommentary.join('\n');
               } else {
                 ibnEzraText = hebrewCommentary || '';
               }
