@@ -117,35 +117,84 @@
         english: "Genesis",
         hebrew: "בראשית",
         parshiot: [
-          "בראשית", "נח", "לך לך", "וירא", "חיי שרה", "תולדות", "ויצא", "וישלח", "וישב", "מקץ", "ויגש", "ויחי"
+          { name: "בראשית", apiName: "Bereshit" },
+          { name: "נח", apiName: "Noach" },
+          { name: "לך לך", apiName: "Lech Lecha" },
+          { name: "וירא", apiName: "Vayera" },
+          { name: "חיי שרה", apiName: "Chayei Sara" },
+          { name: "תולדות", apiName: "Toldot" },
+          { name: "ויצא", apiName: "Vayetzei" },
+          { name: "וישלח", apiName: "Vayishlach" },
+          { name: "וישב", apiName: "Vayeshev" },
+          { name: "מקץ", apiName: "Miketz" },
+          { name: "ויגש", apiName: "Vayigash" },
+          { name: "ויחי", apiName: "Vayechi" }
         ]
       },
       {
         english: "Exodus",
         hebrew: "שמות",
         parshiot: [
-          "שמות", "וארא", "בא", "בשלח", "יתרו", "משפטים", "תרומה", "תצוה", "כי תשא", "ויקהל", "פקודי"
+          { name: "שמות", apiName: "Shemot" },
+          { name: "וארא", apiName: "Vaera" },
+          { name: "בא", apiName: "Bo" },
+          { name: "בשלח", apiName: "Beshalach" },
+          { name: "יתרו", apiName: "Yitro" },
+          { name: "משפטים", apiName: "Mishpatim" },
+          { name: "תרומה", apiName: "Terumah" },
+          { name: "תצוה", apiName: "Tetzaveh" },
+          { name: "כי תשא", apiName: "Ki Tisa" },
+          { name: "ויקהל", apiName: "Vayakhel" },
+          { name: "פקודי", apiName: "Pekudei" }
         ]
       },
       {
         english: "Leviticus",
         hebrew: "ויקרא",
         parshiot: [
-          "ויקרא", "צו", "שמיני", "תזריע", "מצורע", "אחרי מות", "קדושים", "אמור", "בהר", "בחוקתי"
+          { name: "ויקרא", apiName: "Vayikra" },
+          { name: "צו", apiName: "Tzav" },
+          { name: "שמיני", apiName: "Shmini" },
+          { name: "תזריע", apiName: "Tazria" },
+          { name: "מצורע", apiName: "Metzora" },
+          { name: "אחרי מות", apiName: "Achrei Mot" },
+          { name: "קדושים", apiName: "Kedoshim" },
+          { name: "אמור", apiName: "Emor" },
+          { name: "בהר", apiName: "Behar" },
+          { name: "בחוקתי", apiName: "Bechukotai" }
         ]
       },
       {
         english: "Numbers",
         hebrew: "במדבר",
         parshiot: [
-          "במדבר", "נשא", "בהעלותך", "שלח", "קרח", "חוקת", "בלק", "פינחס", "מטות", "מסעי"
+          { name: "במדבר", apiName: "Bamidbar" },
+          { name: "נשא", apiName: "Nasso" },
+          { name: "בהעלותך", apiName: "Beha'alotcha" },
+          { name: "שלח", apiName: "Sh'lach" },
+          { name: "קרח", apiName: "Korach" },
+          { name: "חוקת", apiName: "Chukat" },
+          { name: "בלק", apiName: "Balak" },
+          { name: "פינחס", apiName: "Pinchas" },
+          { name: "מטות", apiName: "Matot" },
+          { name: "מסעי", apiName: "Masei" }
         ]
       },
       {
         english: "Deuteronomy",
         hebrew: "דברים",
         parshiot: [
-          "דברים", "ואתחנן", "עקב", "ראה", "שופטים", "כי תצא", "כי תבוא", "ניצבים", "וילך", "האזינו", "זאת הברכה"
+          { name: "דברים", apiName: "Devarim" },
+          { name: "ואתחנן", apiName: "Vaetchanan" },
+          { name: "עקב", apiName: "Eikev" },
+          { name: "ראה", apiName: "Re'eh" },
+          { name: "שופטים", apiName: "Shoftim" },
+          { name: "כי תצא", apiName: "Ki Teitzei" },
+          { name: "כי תבוא", apiName: "Ki Tavo" },
+          { name: "ניצבים", apiName: "Nitzavim" },
+          { name: "וילך", apiName: "Vayeilech" },
+          { name: "האזינו", apiName: "Ha'Azinu" },
+          { name: "זאת הברכה", apiName: "Zot Habracha" }
         ]
       }
     ];
@@ -185,8 +234,8 @@
 
       book.parshiot.forEach(parsha => {
         const option = document.createElement('option');
-        option.value = parsha;
-        option.textContent = parsha;
+        option.value = parsha.apiName;
+        option.textContent = parsha.name;
         parshaSelect.appendChild(option);
       });
 
@@ -204,13 +253,16 @@
     // הורדת הטקסט
     downloadBtn.addEventListener('click', async () => {
       const book = bookSelect.value;
-      const parsha = parshaSelect.value;
+      const parshaApiName = parshaSelect.value;
+      const bookInfo = TORAH_BOOKS.find(b => b.english === book);
+      const parshaInfo = bookInfo.parshiot.find(p => p.apiName === parshaApiName);
+      const parshaDisplayName = parshaInfo.name;
       const includeRashi = includeRashiEl.checked;
       const includeOnkelos = includeOnkelosEl.checked;
       const includeRamban = includeRambanEl.checked;
       const includeIbnEzra = includeIbnEzraEl.checked;
 
-      if (!book || !parsha) {
+      if (!book || !parshaApiName) {
         messageDiv.textContent = 'אנא בחר ספר ופרשה.';
         messageDiv.className = 'message';
         return;
@@ -218,8 +270,6 @@
 
       messageDiv.textContent = 'מוריד טקסט...';
       messageDiv.className = 'message';
-
-      const bookInfo = TORAH_BOOKS.find(b => b.english === book);
       let mainText = '';
       let rashiText = '';
       let onkelosText = '';
@@ -229,7 +279,7 @@
 
       try {
         // הורד את הטקסט הראשי
-        const mainUrl = `https://www.sefaria.org/api/texts/${book}.${parsha}?lang=he&commentary=0&context=0`;
+        const mainUrl = `https://www.sefaria.org/api/texts/${book}.${parshaApiName}?lang=he&commentary=0&context=0`;
         const mainResponse = await fetch(mainUrl);
 
         if (mainResponse.ok) {
@@ -247,7 +297,7 @@
         // הורד פירוש רש"י
         if (includeRashi) {
           try {
-            const rashiUrl = `https://www.sefaria.org/api/texts/Rashi on ${book}.${parsha}?lang=he&context=0`;
+            const rashiUrl = `https://www.sefaria.org/api/texts/Rashi on ${book}.${parshaApiName}?lang=he&context=0`;
             const rashiResponse = await fetch(rashiUrl);
             if (rashiResponse.ok) {
               const rashiData = await rashiResponse.json();
@@ -266,7 +316,7 @@
         // הורד תרגום אונקלוס
         if (includeOnkelos) {
           try {
-            const onkelosUrl = `https://www.sefaria.org/api/texts/Onkelos on ${book}.${parsha}?lang=he&context=0`;
+            const onkelosUrl = `https://www.sefaria.org/api/texts/Onkelos on ${book}.${parshaApiName}?lang=he&context=0`;
             const onkelosResponse = await fetch(onkelosUrl);
             if (onkelosResponse.ok) {
               const onkelosData = await onkelosResponse.json();
@@ -285,7 +335,7 @@
         // הורד פירוש רמב"ן
         if (includeRamban) {
           try {
-            const rambanUrl = `https://www.sefaria.org/api/texts/Ramban on ${book}.${parsha}?lang=he&context=0`;
+            const rambanUrl = `https://www.sefaria.org/api/texts/Ramban on ${book}.${parshaApiName}?lang=he&context=0`;
             const rambanResponse = await fetch(rambanUrl);
             if (rambanResponse.ok) {
               const rambanData = await rambanResponse.json();
@@ -304,7 +354,7 @@
         // הורד פירוש אבן עזרא
         if (includeIbnEzra) {
           try {
-            const ibnEzraUrl = `https://www.sefaria.org/api/texts/Ibn Ezra on ${book}.${parsha}?lang=he&context=0`;
+            const ibnEzraUrl = `https://www.sefaria.org/api/texts/Ibn Ezra on ${book}.${parshaApiName}?lang=he&context=0`;
             const ibnEzraResponse = await fetch(ibnEzraUrl);
             if (ibnEzraResponse.ok) {
               const ibnEzraData = await ibnEzraResponse.json();
@@ -322,7 +372,7 @@
 
         // הורד את הקובץ הראשי
         if (mainText.trim()) {
-          const filename = `${book}_${parsha}.txt`;
+          const filename = `${book}_${parshaDisplayName}.txt`;
           const blob = new Blob([mainText], { type: 'text/plain;charset=utf-8' });
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
@@ -338,7 +388,7 @@
 
         // הורד פירוש רש"י
         if (rashiText.trim()) {
-          const filename = `${book}_${parsha}_rashi.txt`;
+          const filename = `${book}_${parshaDisplayName}_rashi.txt`;
           const blob = new Blob([rashiText], { type: 'text/plain;charset=utf-8' });
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
@@ -354,7 +404,7 @@
 
         // הורד תרגום אונקלוס
         if (onkelosText.trim()) {
-          const filename = `${book}_${parsha}_onkelos.txt`;
+          const filename = `${book}_${parshaDisplayName}_onkelos.txt`;
           const blob = new Blob([onkelosText], { type: 'text/plain;charset=utf-8' });
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
@@ -370,7 +420,7 @@
 
         // הורד פירוש רמב"ן
         if (rambanText.trim()) {
-          const filename = `${book}_${parsha}_ramban.txt`;
+          const filename = `${book}_${parshaDisplayName}_ramban.txt`;
           const blob = new Blob([rambanText], { type: 'text/plain;charset=utf-8' });
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
@@ -386,7 +436,7 @@
 
         // הורד פירוש אבן עזרא
         if (ibnEzraText.trim()) {
-          const filename = `${book}_${parsha}_ibn_ezra.txt`;
+          const filename = `${book}_${parshaDisplayName}_ibn_ezra.txt`;
           const blob = new Blob([ibnEzraText], { type: 'text/plain;charset=utf-8' });
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
