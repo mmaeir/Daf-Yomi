@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>הורדת תורה</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      min-width: 320px;
+      width: 100%;
+      max-width: 600px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: #2d3a4a;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1rem;
+      color: #2d7ff9;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      color: #444;
+      font-weight: 500;
+    }
+    select, button {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      background: #2d7ff9;
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1a5dcc;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      text-align: center;
+      margin-top: 1rem;
+      color: #d32f2f;
+      font-weight: 500;
+    }
+    .success {
+      color: #388e3c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-link">← חזרה לדף הבית</a>
+    <h1>הורדת תורה</h1>
+    <label for="book">בחר ספר:</label>
+    <select id="book"></select>
+    <label for="parsha">בחר פרשה:</label>
+    <select id="parsha" disabled>
+      <option value="">-- בחר ספר תחילה --</option>
+    </select>
+    <div style="margin: 0.5rem 0 1rem 0;">
+      <strong>כלול פירושים:</strong><br>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+        <input type="checkbox" id="includeRashi" checked> רש"י
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includeOnkelos" checked> אונקלוס
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includeRamban" checked> רמב"ן
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includeIbnEzra" checked> אבן עזרא
+      </label>
+    </div>
+    <button id="download" disabled>הורד פרשה</button>
+    <div class="message" id="message"></div>
+  </div>
+  <script>
+    // רשימת חמשת חומשי התורה עם הפרשיות
+    const TORAH_BOOKS = [
+      {
+        english: "Genesis",
+        hebrew: "בראשית",
+        parshiot: [
+          "בראשית", "נח", "לך לך", "וירא", "חיי שרה", "תולדות", "ויצא", "וישלח", "וישב", "מקץ", "ויגש", "ויחי"
+        ]
+      },
+      {
+        english: "Exodus",
+        hebrew: "שמות",
+        parshiot: [
+          "שמות", "וארא", "בא", "בשלח", "יתרו", "משפטים", "תרומה", "תצוה", "כי תשא", "ויקהל", "פקודי"
+        ]
+      },
+      {
+        english: "Leviticus",
+        hebrew: "ויקרא",
+        parshiot: [
+          "ויקרא", "צו", "שמיני", "תזריע", "מצורע", "אחרי מות", "קדושים", "אמור", "בהר", "בחוקתי"
+        ]
+      },
+      {
+        english: "Numbers",
+        hebrew: "במדבר",
+        parshiot: [
+          "במדבר", "נשא", "בהעלותך", "שלח", "קרח", "חוקת", "בלק", "פינחס", "מטות", "מסעי"
+        ]
+      },
+      {
+        english: "Deuteronomy",
+        hebrew: "דברים",
+        parshiot: [
+          "דברים", "ואתחנן", "עקב", "ראה", "שופטים", "כי תצא", "כי תבוא", "ניצבים", "וילך", "האזינו", "זאת הברכה"
+        ]
+      }
+    ];
+
+    const bookSelect = document.getElementById('book');
+    const parshaSelect = document.getElementById('parsha');
+    const downloadBtn = document.getElementById('download');
+    const messageDiv = document.getElementById('message');
+    const includeRashiEl = document.getElementById('includeRashi');
+    const includeOnkelosEl = document.getElementById('includeOnkelos');
+    const includeRambanEl = document.getElementById('includeRamban');
+    const includeIbnEzraEl = document.getElementById('includeIbnEzra');
+
+    // טען את רשימת הספרים
+    TORAH_BOOKS.forEach(book => {
+      const option = document.createElement('option');
+      option.value = book.english;
+      option.textContent = `${book.hebrew} (${book.english})`;
+      bookSelect.appendChild(option);
+    });
+
+    // עדכן את תפריט הפרשיות כשמשנים ספר
+    function updateParshaDropdown() {
+      parshaSelect.innerHTML = '';
+      const book = TORAH_BOOKS.find(b => b.english === bookSelect.value);
+      if (!book) {
+        parshaSelect.disabled = true;
+        downloadBtn.disabled = true;
+        return;
+      }
+
+      parshaSelect.disabled = false;
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = '-- בחר פרשה --';
+      parshaSelect.appendChild(defaultOption);
+
+      book.parshiot.forEach(parsha => {
+        const option = document.createElement('option');
+        option.value = parsha;
+        option.textContent = parsha;
+        parshaSelect.appendChild(option);
+      });
+
+      downloadBtn.disabled = !parshaSelect.value;
+    }
+
+    bookSelect.addEventListener('change', updateParshaDropdown);
+    parshaSelect.addEventListener('change', () => {
+      downloadBtn.disabled = !parshaSelect.value;
+    });
+
+    // אתחל את תפריט הפרשיות כשהדף נטען
+    updateParshaDropdown();
+
+    // הורדת הטקסט
+    downloadBtn.addEventListener('click', async () => {
+      const book = bookSelect.value;
+      const parsha = parshaSelect.value;
+      const includeRashi = includeRashiEl.checked;
+      const includeOnkelos = includeOnkelosEl.checked;
+      const includeRamban = includeRambanEl.checked;
+      const includeIbnEzra = includeIbnEzraEl.checked;
+
+      if (!book || !parsha) {
+        messageDiv.textContent = 'אנא בחר ספר ופרשה.';
+        messageDiv.className = 'message';
+        return;
+      }
+
+      messageDiv.textContent = 'מוריד טקסט...';
+      messageDiv.className = 'message';
+
+      const bookInfo = TORAH_BOOKS.find(b => b.english === book);
+      let mainText = '';
+      let rashiText = '';
+      let onkelosText = '';
+      let rambanText = '';
+      let ibnEzraText = '';
+      let downloaded = [];
+
+      try {
+        // הורד את הטקסט הראשי
+        const mainUrl = `https://www.sefaria.org/api/texts/${book}.${parsha}?lang=he&commentary=0&context=0`;
+        const mainResponse = await fetch(mainUrl);
+
+        if (mainResponse.ok) {
+          const mainData = await mainResponse.json();
+          const hebrewText = mainData.he || [];
+          if (Array.isArray(hebrewText)) {
+            mainText = hebrewText.flat().join('\n');
+          } else {
+            mainText = hebrewText || '';
+          }
+        } else {
+          throw new Error(`HTTP ${mainResponse.status}`);
+        }
+
+        // הורד פירוש רש"י
+        if (includeRashi) {
+          try {
+            const rashiUrl = `https://www.sefaria.org/api/texts/Rashi on ${book}.${parsha}?lang=he&context=0`;
+            const rashiResponse = await fetch(rashiUrl);
+            if (rashiResponse.ok) {
+              const rashiData = await rashiResponse.json();
+              const hebrewCommentary = rashiData.he || [];
+              if (Array.isArray(hebrewCommentary)) {
+                rashiText = hebrewCommentary.flat().join('\n');
+              } else {
+                rashiText = hebrewCommentary || '';
+              }
+            }
+          } catch (e) {
+            console.error('Error fetching Rashi:', e);
+          }
+        }
+
+        // הורד תרגום אונקלוס
+        if (includeOnkelos) {
+          try {
+            const onkelosUrl = `https://www.sefaria.org/api/texts/Onkelos on ${book}.${parsha}?lang=he&context=0`;
+            const onkelosResponse = await fetch(onkelosUrl);
+            if (onkelosResponse.ok) {
+              const onkelosData = await onkelosResponse.json();
+              const hebrewCommentary = onkelosData.he || [];
+              if (Array.isArray(hebrewCommentary)) {
+                onkelosText = hebrewCommentary.flat().join('\n');
+              } else {
+                onkelosText = hebrewCommentary || '';
+              }
+            }
+          } catch (e) {
+            console.error('Error fetching Onkelos:', e);
+          }
+        }
+
+        // הורד פירוש רמב"ן
+        if (includeRamban) {
+          try {
+            const rambanUrl = `https://www.sefaria.org/api/texts/Ramban on ${book}.${parsha}?lang=he&context=0`;
+            const rambanResponse = await fetch(rambanUrl);
+            if (rambanResponse.ok) {
+              const rambanData = await rambanResponse.json();
+              const hebrewCommentary = rambanData.he || [];
+              if (Array.isArray(hebrewCommentary)) {
+                rambanText = hebrewCommentary.flat().join('\n');
+              } else {
+                rambanText = hebrewCommentary || '';
+              }
+            }
+          } catch (e) {
+            console.error('Error fetching Ramban:', e);
+          }
+        }
+
+        // הורד פירוש אבן עזרא
+        if (includeIbnEzra) {
+          try {
+            const ibnEzraUrl = `https://www.sefaria.org/api/texts/Ibn Ezra on ${book}.${parsha}?lang=he&context=0`;
+            const ibnEzraResponse = await fetch(ibnEzraUrl);
+            if (ibnEzraResponse.ok) {
+              const ibnEzraData = await ibnEzraResponse.json();
+              const hebrewCommentary = ibnEzraData.he || [];
+              if (Array.isArray(hebrewCommentary)) {
+                ibnEzraText = hebrewCommentary.flat().join('\n');
+              } else {
+                ibnEzraText = hebrewCommentary || '';
+              }
+            }
+          } catch (e) {
+            console.error('Error fetching Ibn Ezra:', e);
+          }
+        }
+
+        // הורד את הקובץ הראשי
+        if (mainText.trim()) {
+          const filename = `${book}_${parsha}.txt`;
+          const blob = new Blob([mainText], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+          downloaded.push(filename);
+        }
+
+        // הורד פירוש רש"י
+        if (rashiText.trim()) {
+          const filename = `${book}_${parsha}_rashi.txt`;
+          const blob = new Blob([rashiText], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+          downloaded.push(filename);
+        }
+
+        // הורד תרגום אונקלוס
+        if (onkelosText.trim()) {
+          const filename = `${book}_${parsha}_onkelos.txt`;
+          const blob = new Blob([onkelosText], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+          downloaded.push(filename);
+        }
+
+        // הורד פירוש רמב"ן
+        if (rambanText.trim()) {
+          const filename = `${book}_${parsha}_ramban.txt`;
+          const blob = new Blob([rambanText], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+          downloaded.push(filename);
+        }
+
+        // הורד פירוש אבן עזרא
+        if (ibnEzraText.trim()) {
+          const filename = `${book}_${parsha}_ibn_ezra.txt`;
+          const blob = new Blob([ibnEzraText], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+          downloaded.push(filename);
+        }
+
+        if (downloaded.length > 0) {
+          messageDiv.textContent = `הורדה הושלמה: ${downloaded.join(', ')}`;
+          messageDiv.className = 'message success';
+        } else {
+          messageDiv.textContent = 'לא נמצא טקסט עבור הפרשה הזו.';
+          messageDiv.className = 'message';
+        }
+
+      } catch (error) {
+        console.error('Error downloading text:', error);
+        messageDiv.textContent = 'שגיאה בהורדת הטקסט: ' + error.message;
+        messageDiv.className = 'message';
+      }
+    });
+  </script>
+</body>
+</html>
