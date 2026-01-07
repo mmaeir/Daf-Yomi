@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>כתבי הרב קוק</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      min-width: 320px;
+      width: 100%;
+      max-width: 600px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: #2d3a4a;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1rem;
+      color: #2d7ff9;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      color: #444;
+      font-weight: 500;
+    }
+    select, button {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      background: #2d7ff9;
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1a5dcc;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      text-align: center;
+      margin-top: 1rem;
+      color: #d32f2f;
+      font-weight: 500;
+    }
+    .success {
+      color: #388e3c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-link">← חזרה לדף הבית</a>
+    <h1>כתבי הרב קוק</h1>
+    <label for="book">בחר ספר:</label>
+    <select id="book">
+      <option value="">-- בחר ספר --</option>
+      <option value="Orot">אורות</option>
+    </select>
+    <label for="section">בחר פרק/חלק:</label>
+    <select id="section" disabled>
+      <option value="">-- בחר ספר תחילה --</option>
+    </select>
+    <button id="download" disabled>הורד טקסט</button>
+    <div class="message" id="message"></div>
+  </div>
+  <script>
+    // ספרי הרב קוק - נתונים בסיסיים
+    const RAV_KOOK_BOOKS = {
+      "Orot": {
+        hebrew: "אורות",
+        apiPath: "Orot"
+      }
+    };
+
+    const bookSelect = document.getElementById('book');
+    const sectionSelect = document.getElementById('section');
+    const downloadBtn = document.getElementById('download');
+    const messageDiv = document.getElementById('message');
+
+    // טעינת מבנה הספר מ-Sefaria API
+    async function loadBookStructure(bookKey) {
+      const book = RAV_KOOK_BOOKS[bookKey];
+      if (!book) return;
+
+      messageDiv.textContent = 'טוען מבנה הספר...';
+      messageDiv.className = 'message';
+
+      try {
+        // קבלת מבנה הספר מ-API - נסה מספר endpoints
+        let response = await fetch(`https://www.sefaria.org/api/v2/raw/index/${book.apiPath}`);
+        let data;
+        
+        if (!response.ok) {
+          // נסה endpoint אחר
+          response = await fetch(`https://www.sefaria.org/api/index/${book.apiPath}`);
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+        }
+        
+        data = await response.json();
+        console.log('API Response:', data); // Debug
+        console.log('API Response keys:', Object.keys(data)); // Debug
+        
+        // ניקוי תפריט הפרקים
+        sectionSelect.innerHTML = '';
+        sectionSelect.disabled = false;
+        
+        // הוספת אפשרות ברירת מחדל
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '-- בחר פרק --';
+        sectionSelect.appendChild(defaultOption);
+
+        // פונקציה רקורסיבית להוספת פרקים
+        function addSections(nodes, prefix = '', pathPrefix = '') {
+          if (!nodes || !Array.isArray(nodes)) {
+            console.log('Nodes is not an array:', nodes);
+            return;
+          }
+          
+          nodes.forEach((item) => {
+            // טיפול במבנים שונים של Sefaria
+            const hebrewTitle = item.he || item.heTitle || item.title || item.hebrew || '';
+            const englishTitle = item.en || item.enTitle || item.title || item.english || '';
+            
+            // אם זה אובייקט עם מפתחות, נסה לחלץ את השם
+            let displayTitle = hebrewTitle || englishTitle;
+            if (!displayTitle && typeof item === 'object') {
+              // נסה למצוא את השם במפתחות שונים
+              displayTitle = item.name || item.key || item.slug || '';
+            }
+            
+            const displayName = prefix ? `${prefix} - ${displayTitle}` : displayTitle;
+            // השתמש ב-en או בשם האנגלי לבניית הנתיב
+            const pathName = englishTitle || item.en || item.key || item.slug || displayTitle;
+            const currentPath = pathPrefix ? `${pathPrefix}.${pathName}` : pathName;
+            
+            // הוסף אופציה רק אם יש כותרת
+            if (displayTitle) {
+              const option = document.createElement('option');
+              option.value = currentPath;
+              option.textContent = displayName;
+              option.dataset.hebrew = hebrewTitle;
+              option.dataset.english = englishTitle || pathName;
+              sectionSelect.appendChild(option);
+            }
+
+            // אם יש תתי-פרקים, הוסף אותם רקורסיבית
+            if (item.nodes && Array.isArray(item.nodes) && item.nodes.length > 0) {
+              addSections(item.nodes, displayName, currentPath);
+            }
+            // טיפול גם במבנה עם sections
+            if (item.sections && Array.isArray(item.sections) && item.sections.length > 0) {
+              addSections(item.sections, displayName, currentPath);
+            }
+            // טיפול גם במבנה עם contents
+            if (item.contents && Array.isArray(item.contents) && item.contents.length > 0) {
+              addSections(item.contents, displayName, currentPath);
+            }
+          });
+        }
+
+        // טיפול במבנים שונים של ה-API
+        let foundStructure = false;
+        
+        // בדיקה מפורטת של המבנה
+        if (data.schema) {
+          console.log('Found schema:', Object.keys(data.schema));
+          if (data.schema.nodes && Array.isArray(data.schema.nodes)) {
+            console.log('Found structure: schema.nodes');
+            addSections(data.schema.nodes);
+            foundStructure = true;
+          } else if (data.schema.sections && Array.isArray(data.schema.sections)) {
+            console.log('Found structure: schema.sections');
+            addSections(data.schema.sections);
+            foundStructure = true;
+          } else if (data.schema.contents && Array.isArray(data.schema.contents)) {
+            console.log('Found structure: schema.contents');
+            addSections(data.schema.contents);
+            foundStructure = true;
+          }
+        }
+        
+        if (!foundStructure && data.nodes && Array.isArray(data.nodes)) {
+          console.log('Found structure: nodes');
+          addSections(data.nodes);
+          foundStructure = true;
+        }
+        
+        if (!foundStructure && data.sections && Array.isArray(data.sections)) {
+          console.log('Found structure: sections');
+          addSections(data.sections);
+          foundStructure = true;
+        }
+        
+        if (!foundStructure && Array.isArray(data)) {
+          console.log('Found structure: array');
+          addSections(data);
+          foundStructure = true;
+        }
+        
+        // נסה גם דרך contents
+        if (!foundStructure && data.contents && Array.isArray(data.contents)) {
+          console.log('Found structure: contents');
+          addSections(data.contents);
+          foundStructure = true;
+        }
+        
+        if (!foundStructure) {
+          console.error('Unexpected API structure:', data);
+          messageDiv.textContent = 'מבנה הספר לא מזוהה. בדוק את הקונסול לדיבוג.';
+          messageDiv.className = 'message';
+        } else {
+          // בדיקה אם נוספו פרקים
+          if (sectionSelect.options.length <= 1) {
+            messageDiv.textContent = 'לא נמצאו פרקים. בדוק את הקונסול לדיבוג.';
+            messageDiv.className = 'message';
+          } else {
+            messageDiv.textContent = '';
+          }
+        }
+        
+        downloadBtn.disabled = !sectionSelect.value;
+      } catch (error) {
+        console.error('Error loading book structure:', error);
+        messageDiv.textContent = 'שגיאה בטעינת מבנה הספר: ' + error.message;
+        messageDiv.className = 'message';
+        sectionSelect.disabled = true;
+        downloadBtn.disabled = true;
+      }
+    }
+
+    // עדכון תפריט הפרקים כשמשנים ספר
+    bookSelect.addEventListener('change', () => {
+      const selectedBook = bookSelect.value;
+      if (selectedBook) {
+        loadBookStructure(selectedBook);
+      } else {
+        sectionSelect.innerHTML = '<option value="">-- בחר ספר תחילה --</option>';
+        sectionSelect.disabled = true;
+        downloadBtn.disabled = true;
+      }
+    });
+
+    // הורדת הטקסט
+    downloadBtn.addEventListener('click', async () => {
+      const bookKey = bookSelect.value;
+      const section = sectionSelect.value;
+      
+      if (!bookKey || !section) {
+        messageDiv.textContent = 'אנא בחר ספר ופרק.';
+        messageDiv.className = 'message';
+        return;
+      }
+
+      const book = RAV_KOOK_BOOKS[bookKey];
+      messageDiv.textContent = 'מוריד טקסט...';
+      messageDiv.className = 'message';
+
+      try {
+        // בניית נתיב ה-API
+        const apiPath = `${book.apiPath}.${section}`;
+        const url = `https://www.sefaria.org/api/texts/${apiPath}?lang=he&commentary=0&context=0`;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        let hebrewText = data.he || [];
+        
+        // טיפול במבנים שונים של הטקסט
+        if (Array.isArray(hebrewText)) {
+          hebrewText = hebrewText.join('\n');
+        } else if (typeof hebrewText === 'object') {
+          // אם זה אובייקט, נסה לחלץ טקסט מתוכו
+          hebrewText = JSON.stringify(hebrewText, null, 2);
+        }
+        
+        if (!hebrewText || hebrewText.trim().length === 0) {
+          messageDiv.textContent = 'לא נמצא טקסט עבור הפרק הזה.';
+          messageDiv.className = 'message';
+          return;
+        }
+
+        // יצירת קובץ להורדה
+        const selectedOption = sectionSelect.options[sectionSelect.selectedIndex];
+        const sectionName = selectedOption.dataset.hebrew || section;
+        const filename = `${book.hebrew}_${sectionName.replace(/[^\w\s-]/g, '_')}.txt`;
+        const blob = new Blob([hebrewText], { type: 'text/plain;charset=utf-8' });
+        
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(a.href);
+        }, 100);
+
+        messageDiv.textContent = `הורדה הושלמה: ${filename}`;
+        messageDiv.className = 'message success';
+      } catch (error) {
+        console.error('Error downloading text:', error);
+        messageDiv.textContent = 'שגיאה בהורדת הטקסט: ' + error.message;
+        messageDiv.className = 'message';
+      }
+    });
+
+    // הפעלת כפתור ההורדה רק כשיש בחירה
+    sectionSelect.addEventListener('change', () => {
+      downloadBtn.disabled = !sectionSelect.value;
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>הורדת משנה</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      min-width: 320px;
+      width: 100%;
+      max-width: 600px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: #2d3a4a;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1rem;
+      color: #2d7ff9;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      color: #444;
+      font-weight: 500;
+    }
+    select, button {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      background: #2d7ff9;
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1a5dcc;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      text-align: center;
+      margin-top: 1rem;
+      color: #d32f2f;
+      font-weight: 500;
+    }
+    .success {
+      color: #388e3c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-link">← חזרה לדף הבית</a>
+    <h1>הורדת משנה</h1>
+    <label for="tractate">בחר מסכת:</label>
+    <select id="tractate"></select>
+    <label for="chapter">בחר פרק:</label>
+    <select id="chapter" disabled>
+      <option value="">-- בחר מסכת תחילה --</option>
+    </select>
+    <div style="margin: 0.5rem 0 1rem 0;">
+      <strong>כלול פירושים:</strong><br>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+        <input type="checkbox" id="includeBartenura" checked> ברטנורא
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includeRambam" checked> רמב"ם
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        <input type="checkbox" id="includeTosefotYomTov" checked> תוספות יום טוב
+      </label>
+    </div>
+    <button id="download" disabled>הורד פרק</button>
+    <div class="message" id="message"></div>
+  </div>
+  <script>
+    // רשימת כל מסכתות המשנה עם מספר הפרקים
+    const MISHNAH_TRACTATES = [
+      // סדר זרעים
+      { english: "Berakhot", hebrew: "ברכות", chapters: 9 },
+      { english: "Peah", hebrew: "פאה", chapters: 8 },
+      { english: "Demai", hebrew: "דמאי", chapters: 7 },
+      { english: "Kilayim", hebrew: "כלאים", chapters: 9 },
+      { english: "Sheviit", hebrew: "שביעית", chapters: 10 },
+      { english: "Terumot", hebrew: "תרומות", chapters: 11 },
+      { english: "Maasrot", hebrew: "מעשרות", chapters: 5 },
+      { english: "Maaser Sheni", hebrew: "מעשר שני", chapters: 5 },
+      { english: "Challah", hebrew: "חלה", chapters: 4 },
+      { english: "Orlah", hebrew: "ערלה", chapters: 3 },
+      { english: "Bikkurim", hebrew: "ביכורים", chapters: 4 },
+      
+      // סדר מועד
+      { english: "Shabbat", hebrew: "שבת", chapters: 24 },
+      { english: "Eruvin", hebrew: "עירובין", chapters: 10 },
+      { english: "Pesachim", hebrew: "פסחים", chapters: 10 },
+      { english: "Shekalim", hebrew: "שקלים", chapters: 8 },
+      { english: "Yoma", hebrew: "יומא", chapters: 8 },
+      { english: "Sukkah", hebrew: "סוכה", chapters: 5 },
+      { english: "Beitzah", hebrew: "ביצה", chapters: 5 },
+      { english: "Rosh Hashanah", hebrew: "ראש השנה", chapters: 4 },
+      { english: "Taanit", hebrew: "תענית", chapters: 4 },
+      { english: "Megillah", hebrew: "מגילה", chapters: 4 },
+      { english: "Moed Katan", hebrew: "מועד קטן", chapters: 3 },
+      { english: "Chagigah", hebrew: "חגיגה", chapters: 3 },
+      
+      // סדר נשים
+      { english: "Yevamot", hebrew: "יבמות", chapters: 16 },
+      { english: "Ketubot", hebrew: "כתובות", chapters: 13 },
+      { english: "Nedarim", hebrew: "נדרים", chapters: 11 },
+      { english: "Nazir", hebrew: "נזיר", chapters: 9 },
+      { english: "Sotah", hebrew: "סוטה", chapters: 9 },
+      { english: "Gittin", hebrew: "גיטין", chapters: 9 },
+      { english: "Kiddushin", hebrew: "קידושין", chapters: 4 },
+      
+      // סדר נזיקין
+      { english: "Bava Kamma", hebrew: "בבא קמא", chapters: 10 },
+      { english: "Bava Metzia", hebrew: "בבא מציעא", chapters: 10 },
+      { english: "Bava Batra", hebrew: "בבא בתרא", chapters: 10 },
+      { english: "Sanhedrin", hebrew: "סנהדרין", chapters: 11 },
+      { english: "Makkot", hebrew: "מכות", chapters: 3 },
+      { english: "Shevuot", hebrew: "שבועות", chapters: 8 },
+      { english: "Avodah Zarah", hebrew: "עבודה זרה", chapters: 5 },
+      { english: "Horayot", hebrew: "הוריות", chapters: 3 },
+      
+      // סדר קדשים
+      { english: "Zevachim", hebrew: "זבחים", chapters: 14 },
+      { english: "Menachot", hebrew: "מנחות", chapters: 13 },
+      { english: "Chullin", hebrew: "חולין", chapters: 12 },
+      { english: "Bechorot", hebrew: "בכורות", chapters: 9 },
+      { english: "Arachin", hebrew: "ערכין", chapters: 9 },
+      { english: "Temurah", hebrew: "תמורה", chapters: 7 },
+      { english: "Keritot", hebrew: "כריתות", chapters: 6 },
+      { english: "Meilah", hebrew: "מעילה", chapters: 6 },
+      { english: "Tamid", hebrew: "תמיד", chapters: 7 },
+      { english: "Middot", hebrew: "מידות", chapters: 5 },
+      { english: "Kinnim", hebrew: "קינים", chapters: 3 },
+      
+      // סדר טהרות
+      { english: "Kelim", hebrew: "כלים", chapters: 30 },
+      { english: "Oholot", hebrew: "אהלות", chapters: 18 },
+      { english: "Negaim", hebrew: "נגעים", chapters: 14 },
+      { english: "Parah", hebrew: "פרה", chapters: 12 },
+      { english: "Tahorot", hebrew: "טהרות", chapters: 10 },
+      { english: "Mikvaot", hebrew: "מקוואות", chapters: 10 },
+      { english: "Niddah", hebrew: "נדה", chapters: 10 },
+      { english: "Makhshirin", hebrew: "מכשירין", chapters: 6 },
+      { english: "Zavim", hebrew: "זבים", chapters: 5 },
+      { english: "Tevul Yom", hebrew: "טבול יום", chapters: 4 },
+      { english: "Yadayim", hebrew: "ידיים", chapters: 4 },
+      { english: "Uktzin", hebrew: "עוקצין", chapters: 3 }
+    ];
+
+    const tractateSelect = document.getElementById('tractate');
+    const chapterSelect = document.getElementById('chapter');
+    const downloadBtn = document.getElementById('download');
+    const messageDiv = document.getElementById('message');
+    const includeBartenuraEl = document.getElementById('includeBartenura');
+    const includeRambamEl = document.getElementById('includeRambam');
+    const includeTosefotYomTovEl = document.getElementById('includeTosefotYomTov');
+
+    // טען את רשימת המסכתות
+    MISHNAH_TRACTATES.forEach(t => {
+      const option = document.createElement('option');
+      option.value = t.english;
+      option.textContent = `${t.hebrew} (${t.english})`;
+      tractateSelect.appendChild(option);
+    });
+
+    // עדכן את תפריט הפרקים כשמשנים מסכת
+    function updateChapterDropdown() {
+      chapterSelect.innerHTML = '';
+      const tractate = MISHNAH_TRACTATES.find(t => t.english === tractateSelect.value);
+      if (!tractate) {
+        chapterSelect.disabled = true;
+        downloadBtn.disabled = true;
+        return;
+      }
+      
+      chapterSelect.disabled = false;
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = '-- בחר פרק --';
+      chapterSelect.appendChild(defaultOption);
+      
+      for (let i = 1; i <= tractate.chapters; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `פרק ${i}`;
+        chapterSelect.appendChild(option);
+      }
+      
+      downloadBtn.disabled = !chapterSelect.value;
+    }
+
+    tractateSelect.addEventListener('change', updateChapterDropdown);
+    chapterSelect.addEventListener('change', () => {
+      downloadBtn.disabled = !chapterSelect.value;
+    });
+
+    // אתחל את תפריט הפרקים כשהדף נטען
+    updateChapterDropdown();
+
+    // הורדת הטקסט
+    downloadBtn.addEventListener('click', async () => {
+      const tractate = tractateSelect.value;
+      const chapter = chapterSelect.value;
+      const includeBartenura = includeBartenuraEl.checked;
+      const includeRambam = includeRambamEl.checked;
+      const includeTosefotYomTov = includeTosefotYomTovEl.checked;
+      
+      if (!tractate || !chapter) {
+        messageDiv.textContent = 'אנא בחר מסכת ופרק.';
+        messageDiv.className = 'message';
+        return;
+      }
+
+      messageDiv.textContent = 'מוריד טקסט...';
+      messageDiv.className = 'message';
+
+      const tractateInfo = MISHNAH_TRACTATES.find(t => t.english === tractate);
+      let mainText = '';
+      let bartenuraText = '';
+      let rambamText = '';
+      let tosefotYomTovText = '';
+      let downloaded = [];
+
+      try {
+        // הורד את הטקסט הראשי
+        const mainUrl = `https://www.sefaria.org/api/texts/Mishnah ${tractate}.${chapter}?lang=he&commentary=0&context=0`;
+        const mainResponse = await fetch(mainUrl);
+        
+        if (mainResponse.ok) {
+          const mainData = await mainResponse.json();
+          const hebrewText = mainData.he || [];
+          if (Array.isArray(hebrewText)) {
+            mainText = hebrewText.join('\n');
+          } else {
+            mainText = hebrewText || '';
+          }
+        } else {
+          throw new Error(`HTTP ${mainResponse.status}`);
+        }
+
+        // הורד פירוש ברטנורא
+        if (includeBartenura) {
+          try {
+            const bartenuraUrl = `https://www.sefaria.org/api/texts/Bartenura on Mishnah ${tractate}.${chapter}?lang=he&context=0`;
+            const bartenuraResponse = await fetch(bartenuraUrl);
+            if (bartenuraResponse.ok) {
+              const bartenuraData = await bartenuraResponse.json();
+              const hebrewCommentary = bartenuraData.he || [];
+              if (Array.isArray(hebrewCommentary)) {
+                bartenuraText = hebrewCommentary.join('\n');
+              } else {
+                bartenuraText = hebrewCommentary || '';
+              }
+            }
+          } catch (e) {
+            console.error('Error fetching Bartenura:', e);
+          }
+        }
+
+        // הורד פירוש רמב"ם
+        if (includeRambam) {
+          try {
+            const rambamUrl = `https://www.sefaria.org/api/texts/Rambam on Mishnah ${tractate}.${chapter}?lang=he&context=0`;
+            const rambamResponse = await fetch(rambamUrl);
+            if (rambamResponse.ok) {
+              const rambamData = await rambamResponse.json();
+              const hebrewCommentary = rambamData.he || [];
+              if (Array.isArray(hebrewCommentary)) {
+                rambamText = hebrewCommentary.join('\n');
+              } else {
+                rambamText = hebrewCommentary || '';
+              }
+            }
+          } catch (e) {
+            console.error('Error fetching Rambam:', e);
+          }
+        }
+
+        // הורד תוספות יום טוב
+        if (includeTosefotYomTov) {
+          try {
+            const tosefotUrl = `https://www.sefaria.org/api/texts/Tosefot Yom Tov on Mishnah ${tractate}.${chapter}?lang=he&context=0`;
+            const tosefotResponse = await fetch(tosefotUrl);
+            if (tosefotResponse.ok) {
+              const tosefotData = await tosefotResponse.json();
+              const hebrewCommentary = tosefotData.he || [];
+              if (Array.isArray(hebrewCommentary)) {
+                tosefotYomTovText = hebrewCommentary.join('\n');
+              } else {
+                tosefotYomTovText = hebrewCommentary || '';
+              }
+            }
+          } catch (e) {
+            console.error('Error fetching Tosefot Yom Tov:', e);
+          }
+        }
+
+        // הורד את הקובץ הראשי
+        if (mainText.trim()) {
+          const filename = `Mishnah_${tractate}_${chapter}.txt`;
+          const blob = new Blob([mainText], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+          downloaded.push(filename);
+        }
+
+        // הורד פירוש ברטנורא
+        if (bartenuraText.trim()) {
+          const filename = `Mishnah_${tractate}_${chapter}_bartenura.txt`;
+          const blob = new Blob([bartenuraText], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+          downloaded.push(filename);
+        }
+
+        // הורד פירוש רמב"ם
+        if (rambamText.trim()) {
+          const filename = `Mishnah_${tractate}_${chapter}_rambam.txt`;
+          const blob = new Blob([rambamText], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+          downloaded.push(filename);
+        }
+
+        // הורד תוספות יום טוב
+        if (tosefotYomTovText.trim()) {
+          const filename = `Mishnah_${tractate}_${chapter}_tosefot_yom_tov.txt`;
+          const blob = new Blob([tosefotYomTovText], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+          }, 100);
+          downloaded.push(filename);
+        }
+
+        if (downloaded.length > 0) {
+          messageDiv.textContent = `הורדה הושלמה: ${downloaded.join(', ')}`;
+          messageDiv.className = 'message success';
+        } else {
+          messageDiv.textContent = 'לא נמצא טקסט עבור הפרק הזה.';
+          messageDiv.className = 'message';
+        }
+
+      } catch (error) {
+        console.error('Error downloading text:', error);
+        messageDiv.textContent = 'שגיאה בהורדת הטקסט: ' + error.message;
+        messageDiv.className = 'message';
+      }
+    });
+  </script>
+</body>
+</html>
+
